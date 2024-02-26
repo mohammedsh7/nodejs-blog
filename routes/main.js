@@ -10,65 +10,80 @@ const router = express.Router()
  * HOME
  */
 router.get("", async (req, res) => {
-	const locals = {
-		title: "Home",
-		des: "Simple blog application",
+	try {
+		const locals = {
+			title: "Home",
+			des: "Simple blog application",
+		}
+
+		let perPage = 10
+		let page = req.query.page || 1
+
+		const posts = await Post.aggregate([{ $sort: { createdAt: -1 } }])
+			.skip(perPage * page - perPage)
+			.limit(perPage)
+			.exec()
+
+		const count = await Post.countDocuments()
+		const nextPage = parseInt(page) + 1
+		const hasNextPage = nextPage <= Math.ceil(count / perPage)
+
+		res.render("index", {
+			locals,
+			posts,
+			current: page,
+			nextPage: hasNextPage ? nextPage : null,
+		})
+	} catch (error) {
+		console.log(error)
 	}
-
-	// try {
-	// 	const 
-	// } catch (error) {
-		
-	// }
-
-	res.render("index", { locals })
 })
 
+/**
+ * GET /
+ * Post :id
+ */
+router.get("/post/:id", async (req, res) => {
+	try {
+		const locals = { title: "", des: "" }
 
-router.get("/about", (req, res) => {
-	const locals = {
-		title: "About",
+		let slug = req.params.id
+
+		const post = await Post.findById({ _id: slug })
+
+		locals.title = post.title
+		locals.des = post.body
+
+		res.render("post", { locals, post })
+	} catch (error) {
+		console.log(error)
 	}
-
-	res.render("about", { locals })
 })
 
+/**
+ * POST /
+ * Post - searchTerm
+ */
+router.post("/search", async (req, res) => {
+	try {
+		const locals = { title: "", des: "Simple blog application" }
 
-// function insertPostData() {
-// 	Post.insertMany([
-// 		{
-// 			title: "Building Blog",
-// 			body: "This is the blog body text.",
-// 		},
-// 		{
-// 			title: "10 Tips for Better Time Management",
-// 			body: "Learn how to manage your time effectively and boost productivity.",
-// 		},
-// 		{
-// 			title: "The Art of Mindfulness",
-// 			body: "Discover the benefits of practicing mindfulness in your daily life.",
-// 		},
-// 		{
-// 			title: "Exploring the Wonders of Nature",
-// 			body: "Embark on a journey to explore the beauty and wonders of the natural world.",
-// 		},
-// 		{
-// 			title: "Healthy Eating Habits for a Balanced Life",
-// 			body: "Discover simple yet effective tips for maintaining a healthy diet and lifestyle.",
-// 		},
-// 		{
-// 			title: "Mastering the Art of Public Speaking",
-// 			body: "Learn essential techniques to become a confident and persuasive public speaker.",
-// 		},
-// 		{
-// 			title: "Travel Photography Tips for Beginners",
-// 			body: "Capture breathtaking moments and create stunning travel photos with these beginner-friendly tips.",
-// 		},
-// 	])
-// }
+		const { searchTerm } = req.body
+		const searchNoSpecialChar = searchTerm.replace(/[^a-zA-Z0-9 ]/g, "")
 
-// insertPostData()
+		const posts = await Post.find({
+			$or: [
+				{ title: { $regex: new RegExp(searchNoSpecialChar, "i") } },
+				{ body: { $regex: new RegExp(searchNoSpecialChar, "i") } },
+			],
+		})
+
+		locals.title = `Search ${searchTerm}`
+
+		res.render("search", { locals, posts, searchTerm })
+	} catch (error) {
+		console.log(error)
+	}
+})
 
 module.exports = router
-
-

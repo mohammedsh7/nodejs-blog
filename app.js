@@ -2,17 +2,45 @@ require("dotenv").config()
 
 const express = require("express")
 const expressLayout = require("express-ejs-layouts")
+const cookieParser = require("cookie-parser")
+const MongoStore = require("connect-mongo")
 
 const connectDb = require("./config/db")
+const session = require("express-session")
 
 const app = express()
 const PORT = 9000
 
-// connect to database
+/**
+ * starting database connection
+ */
 connectDb()
 
-// middlewares
+/**
+ * for form data handling
+ */
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
+
+app.use(cookieParser())
+
+app.use(
+	session({
+		secret: "keyboard cat",
+		resave: false,
+		saveUninitialized: true,
+		store: MongoStore.create({
+			mongoUrl: process.env.MONGODB_URL,
+		}),
+		// cookie: { maxAge: new Date(Date.now() + (3600000)) }
+	})
+)
+
+/**
+ * configuring static files (css js assets)
+ */
 app.use(express.static("public"))
+
 /**
  * template engine
  */
@@ -22,6 +50,7 @@ app.set("view engine", "ejs")
 
 // routes
 app.use("/", require("./routes/main"))
+app.use("/admin", require("./routes/admin"))
 
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`)
