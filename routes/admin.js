@@ -123,10 +123,132 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
 			des: "Dashboard",
 		}
 
-		res.render("admin/dashboard", { locals, layout: adminLayout })
+		const posts = await Post.find()
+
+		res.render("admin/dashboard", { locals, layout: adminLayout, posts })
 	} catch (error) {
 		console.log(error)
 	}
+})
+
+/**
+ * GET /
+ * Admin - Create new post page
+ */
+router.get("/add-post", authMiddleware, async (req, res) => {
+	try {
+		const locals = {
+			title: "Add post",
+			des: "",
+		}
+
+		const posts = await Post.find()
+
+		res.render("admin/add-post", { locals, layout: adminLayout, posts })
+	} catch (error) {
+		console.log(error)
+	}
+})
+
+/**
+ * POST /
+ * Admin - Create new post
+ */
+router.post("/add-post", authMiddleware, async (req, res) => {
+	try {
+		const { title, body } = req.body
+
+		try {
+			const newPostObj = new Post({ title, body })
+			await Post.create(newPostObj)
+
+			res.redirect("/admin/dashboard")
+		} catch (error) {
+			console.log(error)
+		}
+
+		const posts = await Post.find()
+
+		res.render("admin/add-post", { layout: adminLayout, posts })
+	} catch (error) {
+		console.log(error)
+	}
+})
+
+/**
+ * GET /
+ * Admin - Edit post page
+ */
+router.get("/edit-post/:id", authMiddleware, async (req, res) => {
+	try {
+		const { id } = req.params
+
+		const locals = {
+			title: "Edit post",
+			des: "",
+		}
+
+		const post = await Post.findById({ _id: id })
+
+		res.render("admin/edit-post", { locals, layout: adminLayout, post })
+	} catch (error) {
+		console.log(error)
+	}
+})
+
+/**
+ * PUT /
+ * Admin - Edit post
+ */
+router.put("/edit-post/:id", authMiddleware, async (req, res) => {
+	try {
+		const { title, body } = req.body
+		const { id } = req.params
+
+		try {
+			await Post.findByIdAndUpdate(id, {
+				title,
+				body,
+				updatedAt: Date.now(),
+			})
+
+			res.redirect(`/admin/edit-post/${id}`)
+		} catch (error) {
+			console.log(error)
+		}
+
+		const posts = await Post.find()
+
+		res.render("admin/add-post", { layout: adminLayout, posts })
+	} catch (error) {
+		console.log(error)
+	}
+})
+
+/**
+ * DELETE /
+ * Admin - Delete post
+ */
+router.delete("/delete-post/:id", authMiddleware, async (req, res) => {
+	try {
+		const { id } = req.params
+
+		const post = await Post.deleteOne({ _id: id })
+
+		res.redirect(`/admin/dashboard`)
+	} catch (error) {
+		console.log(error)
+	}
+})
+
+/**
+ * GET /
+ * Admin - Logout
+ */
+router.get("/logout", authMiddleware, async (req, res) => {
+	res.clearCookie("token")
+	// res.json({ message: "Logout successful." })
+	res.redirect("/")
 })
 
 module.exports = router

@@ -33,6 +33,7 @@ router.get("", async (req, res) => {
 			posts,
 			current: page,
 			nextPage: hasNextPage ? nextPage : null,
+			currentRoute: "/",
 		})
 	} catch (error) {
 		console.log(error)
@@ -45,7 +46,7 @@ router.get("", async (req, res) => {
  */
 router.get("/post/:id", async (req, res) => {
 	try {
-		const locals = { title: "", des: "" }
+		const locals = { title: "", des: "", currentRoute: "" }
 
 		let slug = req.params.id
 
@@ -54,7 +55,7 @@ router.get("/post/:id", async (req, res) => {
 		locals.title = post.title
 		locals.des = post.body
 
-		res.render("post", { locals, post })
+		res.render("post", { locals, post, currentRoute: `/post/${slug}` })
 	} catch (error) {
 		console.log(error)
 	}

@@ -2,11 +2,13 @@ require("dotenv").config()
 
 const express = require("express")
 const expressLayout = require("express-ejs-layouts")
+const session = require("express-session")
 const cookieParser = require("cookie-parser")
 const MongoStore = require("connect-mongo")
+const methodOverride = require("method-override")
 
 const connectDb = require("./config/db")
-const session = require("express-session")
+const { isActiveRoute } = require("./helper/routeHelper")
 
 const app = express()
 const PORT = 9000
@@ -23,6 +25,8 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
 app.use(cookieParser())
+
+app.use(methodOverride("_method"))
 
 app.use(
 	session({
@@ -47,6 +51,11 @@ app.use(express.static("public"))
 app.use(expressLayout)
 app.set("layout", "./layouts/main")
 app.set("view engine", "ejs")
+
+/**
+ * global context
+ */
+app.locals.isActiveRoute = isActiveRoute
 
 // routes
 app.use("/", require("./routes/main"))
